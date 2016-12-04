@@ -30,14 +30,14 @@ create table routes(
 
 create table stops(
 	stop_id TEXT,
-	stop_code TEXT,
 	stop_name TEXT,
 	stop_desc TEXT,
 	stop_lat REAL,
 	stop_lon REAL,
 	zone_id NUMERIC,
 	stop_url TEXT,
-	timepoint NUMERIC,
+	location_type TEXT,
+	parent_station NUMERIC,
 	primary key (stop_id)
 );
 
