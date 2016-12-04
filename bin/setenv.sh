@@ -1,3 +1,6 @@
+export TMP="../tmp"
+export DB="../db/gtfs.db"
+
 export agency="MTA"
 export operatorRef="$agency NYCT"
 export line="$1"

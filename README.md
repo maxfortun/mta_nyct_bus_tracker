@@ -7,5 +7,4 @@
 * Get MTA GTFS feed from (http://web.mta.info/developers/developer-data-terms.html#data) into Downloads
 * mkdir GTFS and unzip downloaded file there
 * Create sqlite gtfs db: sqlite3 db/gtfs.db < db/gtfs.sql 
-* Create sqlite tracker db: sqlite3 db/tracker.db < db/tracker.sql
-
+* Add activity table: sqlite3 db/gtfs.db < db/activity.sql
