@@ -23,19 +23,10 @@ egrep 'ValidUntil|MonitoredVehicleJourney|VehicleRef|DirectionRef|DatedVehicleJo
 function printEntry {
 	[ -z "$stopId" ] && return
 
-	stopExpectedArrivalHours=${stopExpectedArrival%:*}
-	stopExpectedArrivalHours=${stopExpectedArrivalHours##0}
-	stopExpectedArrivalMinutes=${stopExpectedArrival#*:}
-	stopExpectedArrivalMinutes=${stopExpectedArrivalMinutes##0}
-	stopExpectedArrivalMinutes=$(( stopExpectedArrivalHours * 60 + stopExpectedArrivalMinutes))
-
-	[ "$stopExpectedArrivalMinutes" = "0" ] && return
-
 	now=$(date +'%H:%M:%S')
 	insert="INSERT OR IGNORE INTO ACTIVITY(date, trip_id, vehicle_id, direction_id, stop_id, departure_time, approach_time, proximity, expected_time, delay, measurements) SELECT '$date', '$tripId', $vehicleId, $directionId, $stopId, departure_time, '$now', '$arrivalProximityText', '$stopExpectedArrival', (strftime('%s','$stopExpectedArrival') - strftime('%s',departure_time)) / 60, 1 FROM stop_times where trip_id='$tripId' AND stop_id=$stopId"
 
-	update="UPDATE OR IGNORE ACTIVITY SET approach_time='$now', proximity='$arrivalProximityText', expected_time='$stopExpectedArrival', delay=(strftime('%s','$stopExp
-ectedArrival') - strftime('%s',departure_time)) / 60, measurements=measurements+1 WHERE date='$date' AND trip_id='$tripId' AND stop_id=$stopId AND proximity <> 'at stop'" 
+	update="UPDATE OR IGNORE ACTIVITY SET approach_time='$now', proximity='$arrivalProximityText', expected_time='$stopExpectedArrival', delay=(strftime('%s','$stopExpectedArrival') - strftime('%s',departure_time)) / 60, measurements=measurements+1 WHERE date='$date' AND trip_id='$tripId' AND stop_id=$stopId AND proximity <> 'at stop'" 
 
 	echo $update
 	echo $insert
