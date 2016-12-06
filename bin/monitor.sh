@@ -24,13 +24,21 @@ function printEntry {
 	[ -z "$stopId" ] && return
 
 	now=$(date +'%H:%M:%S')
-	insert="INSERT OR IGNORE INTO ACTIVITY(date, trip_id, vehicle_id, direction_id, stop_id, departure_time, approach_time, proximity, expected_time, delay, measurements) SELECT '$date', '$tripId', $vehicleId, $directionId, $stopId, departure_time, '$now', '$arrivalProximityText', '$stopExpectedArrival', (strftime('%s','$stopExpectedArrival') - strftime('%s',departure_time)) / 60, 1 FROM stop_times where trip_id='$tripId' AND stop_id=$stopId"
 
-	update="UPDATE OR IGNORE ACTIVITY SET approach_time='$now', proximity='$arrivalProximityText', expected_time='$stopExpectedArrival', delay=(strftime('%s','$stopExpectedArrival') - strftime('%s',departure_time)) / 60, measurements=measurements+1 WHERE date='$date' AND trip_id='$tripId' AND stop_id=$stopId AND proximity <> 'at stop'" 
+	if [ -n "$stopExpectedArrival" ]; then
+		update_arrival="UPDATE OR IGNORE ACTIVITY SET activity_time='$now', proximity='$arrivalProximityText', arrival_time='$stopExpectedArrival', measurements=measurements+1 WHERE date='$date' AND trip_id='$tripId' AND stop_id=$stopId AND proximity <> 'at stop'" 
+		echo $update_arrival
+		sqlite3 $DB "$update_arrival;" 
+	fi
 
-	echo $update
+	if [ -n "$stopExpectedDeparture" ]; then
+		update_departure="UPDATE OR IGNORE ACTIVITY SET activity_time='$now', proximity='$arrivalProximityText', departure_time='$stopExpectedDeparture', measurements=measurements+1 WHERE date='$date' AND trip_id='$tripId' AND stop_id=$stopId AND proximity = 'at stop'" 
+		echo $update_departure
+		sqlite3 $DB "$update_departure;" 
+	fi
+
+	insert="INSERT OR IGNORE INTO ACTIVITY(date, trip_id, vehicle_id, direction_id, stop_id, activity_time, proximity, arrival_time, departure_time, measurements) VALUES('$date', '$tripId', $vehicleId, $directionId, $stopId, '$now', '$arrivalProximityText', '$stopExpectedArrival', '$stopExpectedDeparture', 1)"
 	echo $insert
-	sqlite3 $DB "$update;" 
 	sqlite3 $DB "$insert;" 
 }
 
