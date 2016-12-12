@@ -101,9 +101,9 @@ done < $TMP/$line.line
 printEntry
 
 hour=$(date +%H)
-hour=${hour##0}
 
-./show_times_within_an_hour.sh $directionId $date $hour:00 > ~/public_html/bustime/$date-$hour-$directionId.js
+./show_times_within_an_hour.sh $directionId $date $hour:00 > ~/public_html/bustime/$date-$hour-$directionId.js.tmp
+mv ~/public_html/bustime/$date-$hour-$directionId.js.tmp ~/public_html/bustime/$date-$hour-$directionId.js
 
 waitTill=${validUntil%.*}
 waitTill=${waitTill//-/}

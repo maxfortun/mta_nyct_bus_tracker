@@ -37,6 +37,12 @@
 		}
 
 		function drawChart() {
+			var prev=dateToId(prevDate)+"-"+metadata.direction;
+			var next=dateToId(nextDate)+"-"+metadata.direction;
+
+			document.getElementById('prev').innerHTML="<a href='?id="+prev+"'>prev</a>";
+			document.getElementById('next').innerHTML="<a href='?id="+next+"'>next</a>";
+		
 			fixData(data);
 			var dataTable = google.visualization.arrayToDataTable(data);
 			var options = {
@@ -61,19 +67,8 @@
 		var prevDate=new Date(currentDate.getTime() - 3600000);
 		var nextDate=new Date(currentDate.getTime() + 3600000);
 
-		var prev=dateToId(prevDate);
-		var next=dateToId(nextDate);
-
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(function(){
-			if(prev) {
-				document.getElementById('prev').innerHTML="<a href='?id="+prev+"'>prev</a>";
-			}
-
-			if(next) {
-				document.getElementById('next').innerHTML="<a href='?id="+next+"'>next</a>";
-			}
-		
 			loadJavascript(current+".js", drawChart);
 		});
 
