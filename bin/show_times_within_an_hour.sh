@@ -12,7 +12,7 @@ fi
 
 . setenv.sh
 
-SPOOL=$TMP/spool
+SPOOL=$TMP/$$
 
 read -r -d '' SQL << _EOT_
 select distinct a.trip_id, st.stop_sequence,
@@ -38,6 +38,12 @@ if [ ! -f "$SPOOL" ]; then
 	sqlite3 $DB "$SQL;" > $SPOOL
 fi
 
+stops=$(cut -d'|' -f2 $SPOOL |sort -fun|tail -1)
+if [ -z "$stops" ]; then
+	rm $SPOOL
+	exit
+fi
+
 cat <<_EOT_
 var metadata = {
 	"date": "$date",
@@ -49,7 +55,6 @@ var data = [];
 data[0] = [ 'Stop' ];
 _EOT_
 
-stops=$(cut -d'|' -f2 $SPOOL |sort -fun|tail -1)
 stop=1
 while [ $stop -le $stops ]; do
 	echo "data[$stop] = [];"
@@ -85,4 +90,6 @@ while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival
 
 done < $SPOOL
 echo
+
+rm $SPOOL
 
