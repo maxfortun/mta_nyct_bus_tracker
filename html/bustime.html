@@ -1,0 +1,87 @@
+<html>
+	<head>
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script type="text/javascript">
+		function getURLParameter(name) {
+			return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+		}
+
+		function loadJavascript(url, onload) {
+			var script = document.createElement('script');
+			script.onload = onload;
+			script.src = url;
+			document.head.appendChild(script); 
+		}
+
+		function fixData(data) {
+			for(var r = 0; r < data.length; r++) {
+				row = data[r];
+				for(c = 0; c < data[0].length; c++) {
+					if(!row[c]) {
+						row[c] = null;
+					}
+				}
+			}
+		}
+
+		function lpad(str, pad, length) {
+			str=str.toString();
+			for(var i = str.length; i < length; i++) {
+				str=pad+str;
+			}
+			return str;
+		}
+
+		function dateToId(date) {
+			return [date.getFullYear(),lpad(date.getMonth()+1,"0",2),lpad(date.getDate(),"0",2),lpad(date.getHours(),"0",2)].join("-");
+		}
+
+		function drawChart() {
+			fixData(data);
+			var dataTable = google.visualization.arrayToDataTable(data);
+			var options = {
+				title: current,
+				//curveType: 'function',
+				interpolateNulls: true,
+				legend: { position: 'bottom' }
+			};
+
+			var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+	
+			chart.draw(dataTable, options);
+		}
+
+		var current=getURLParameter("id");
+		if(!current) {
+			current=dateToId(new Date());
+		}
+
+		var currentTokens = current.split("-");
+		var currentDate=new Date(currentTokens[0], currentTokens[1]-1, currentTokens[2], currentTokens[3]);
+		var prevDate=new Date(currentDate.getTime() - 3600000);
+		var nextDate=new Date(currentDate.getTime() + 3600000);
+		console.log(prevDate+" -- "+currentDate+" -- "+nextDate);
+		var prev=dateToId(prevDate);
+		var next=dateToId(nextDate);
+
+		google.charts.load('current', {'packages':['corechart']});
+		google.charts.setOnLoadCallback(function(){
+			if(prev) {
+				document.getElementById('prev').innerHTML="<a href='?id="+prev+"'>prev</a>";
+			}
+
+			if(next) {
+				document.getElementById('next').innerHTML="<a href='?id="+next+"'>next</a>";
+			}
+		
+			loadJavascript(current+".js", drawChart);
+		});
+
+	</script>
+	</head>
+	<body>
+	<div id="prev"></div>
+	<div id="next"></div>
+	<div id="curve_chart" style="width: 900px; height: 500px"></div>
+	</body>
+</html>
