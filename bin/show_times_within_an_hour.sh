@@ -35,6 +35,7 @@ order by a.trip_id, st.stop_sequence, st.departure_time
 _EOT_
 
 if [ ! -f "$SPOOL" ]; then
+	#echo $SQL
 	sqlite3 $DB "$SQL;" > $SPOOL
 fi
 
@@ -48,27 +49,28 @@ cat <<_EOT_
 var metadata = {
 	"date": "$date",
 	"time": "$time",
-	"direction": "$direction"
+	"direction": "$direction",
+	"trips": []
 }
 
 var data = [];
-data[0] = [ 'Stop' ];
 _EOT_
 
-stop=1
-while [ $stop -le $stops ]; do
+stop=0
+while [ $stop -lt $stops ]; do
 	echo "data[$stop] = [];"
 	stop=$(( stop + 1 ))
 done
 
 last_trip_id=
-trip_offset=0
+trip_offset=-2
 while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival_time arrival_delay scheduled_departure_time expected_departure_time departure_delay; do
 
 	if [ "$trip_id" != "$last_trip_id" ]; then
 		last_trip_id=$trip_id
-		trip_offset=$(( trip_offset + 1 ))
-		echo "data[0][$trip_offset]='$trip_id';"
+		trip_offset=$(( trip_offset + 2 ))
+		echo "metadata.trips[$trip_offset]='$trip_id';"
+		echo "metadata.trips[$(( trip_offset + 1 ))]='$trip_id';"
 	fi
 	if [ -z "$arrival_delay" ]; then
 		arrival_delay=0
@@ -79,14 +81,23 @@ while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival
 	month=${month##0}
 	day=${date##*-}
 	day=${day##0}
-	hour=${expected_departure_time%%:*}
-	hour=${hour##0}
-	minute=${expected_departure_time#*:}
-	minute=${minute##0}
-	if [ -z "$minute" ]; then
+
+	scheduled_hour=${scheduled_departure_time%%:*}
+	scheduled_hour=${scheduled_hour##0}
+	scheduled_minute=${scheduled_departure_time#*:}
+	scheduled_minute=${scheduled_minute%:*}
+	scheduled_minute=${scheduled_minute##0}
+
+	expected_hour=${expected_departure_time%%:*}
+	expected_hour=${expected_hour##0}
+	expected_minute=${expected_departure_time#*:}
+	expected_minute=${expected_minute##0}
+
+	if [ -z "$expected_minute" ]; then
 		continue
 	fi
-	echo "data[$stop_sequence][$trip_offset]=new Date($year, $month, $day, $hour, $minute);"
+	echo "data[$(( stop_sequence - 1 ))][$trip_offset]=new Date($year, $month, $day, $expected_hour, $expected_minute);"
+	echo "data[$(( stop_sequence - 1 ))][$(( trip_offset + 1 ))]=new Date($year, $month, $day, $scheduled_hour, $scheduled_minute);"
 
 done < $SPOOL
 echo

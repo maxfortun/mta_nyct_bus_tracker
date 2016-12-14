@@ -16,7 +16,7 @@
 		function fixData(data) {
 			for(var r = 0; r < data.length; r++) {
 				row = data[r];
-				for(c = 0; c < data[0].length; c++) {
+				for(c = 0; c < metadata.trips.length; c++) {
 					if(!row[c]) {
 						row[c] = null;
 					}
@@ -37,14 +37,24 @@
 		}
 
 		function drawChart() {
-			var prev=dateToId(prevDate)+"-"+metadata.direction;
-			var next=dateToId(nextDate)+"-"+metadata.direction;
+			var direction=metadata.direction;
+			if(!direction) {
+				direction=0;
+			}
+			var prev=dateToId(prevDate)+"-"+direction;
+			var next=dateToId(nextDate)+"-"+direction;
 
 			document.getElementById('prev').innerHTML="<a href='?id="+prev+"'>prev</a>";
 			document.getElementById('next').innerHTML="<a href='?id="+next+"'>next</a>";
 		
 			fixData(data);
-			var dataTable = google.visualization.arrayToDataTable(data);
+			var dataTable = new google.visualization.DataTable();
+			for(var i = 0; i < metadata.trips.length; i+=2) {
+				dataTable.addColumn({type:'date', label: metadata.trips[i]});
+				dataTable.addColumn({type:'date', role:'tooltip', label: metadata.trips[i+1]});
+			}
+			dataTable.addRows(data);
+
 			var options = {
 				title: current,
 				//curveType: 'function',
@@ -59,7 +69,7 @@
 
 		var current=getURLParameter("id");
 		if(!current) {
-			current=dateToId(new Date());
+			current=dateToId(new Date())+"-0";
 		}
 
 		var currentTokens = current.split("-");
