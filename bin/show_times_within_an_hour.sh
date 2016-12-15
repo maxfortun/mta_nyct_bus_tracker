@@ -19,6 +19,7 @@ select distinct a.trip_id,
 st.stop_sequence,
 a.stop_id,
 s.stop_name,
+a.activity_time,
 st.arrival_time, a.arrival_time,
 (strftime("%s",st.arrival_time) - strftime("%s",a.arrival_time)) / 60,
 st.departure_time, a.departure_time,
@@ -67,7 +68,7 @@ done <<< "$stops"
 
 last_trip_id=
 trip_offset=-2
-while IFS='|' read trip_id stop_sequence stop_id stop_name scheduled_arrival_time expected_arrival_time arrival_delay scheduled_departure_time expected_departure_time departure_delay; do
+while IFS='|' read trip_id stop_sequence stop_id stop_name activity_time scheduled_arrival_time expected_arrival_time arrival_delay scheduled_departure_time expected_departure_time departure_delay; do
 
 	if [ "$trip_id" != "$last_trip_id" ]; then
 		last_trip_id=$trip_id
@@ -85,6 +86,12 @@ while IFS='|' read trip_id stop_sequence stop_id stop_name scheduled_arrival_tim
 	day=${date##*-}
 	day=${day##0}
 
+	activity_hour=${activity_time%%:*}
+	activity_hour=${activity_hour##0}
+	activity_minute=${activity_time#*:}
+	activity_minute=${activity_minute%:*}
+	activity_minute=${activity_minute##0}
+
 	scheduled_hour=${scheduled_departure_time%%:*}
 	scheduled_hour=${scheduled_hour##0}
 	scheduled_minute=${scheduled_departure_time#*:}
@@ -96,10 +103,13 @@ while IFS='|' read trip_id stop_sequence stop_id stop_name scheduled_arrival_tim
 	expected_minute=${expected_departure_time#*:}
 	expected_minute=${expected_minute##0}
 
-	if [ -z "$expected_minute" ]; then
-		continue
-	fi
 	stopId=$(( stop_sequence - 1 ))
+
+	if [ -z "$expected_minute" ]; then
+		expected_hour=$activity_hour
+		expected_minute=$activity_minute
+	fi
+
 	echo "data[$stopId][$(( trip_offset + 1 ))]=new Date($year, $(( month - 1 )), $day, $(( expected_hour - 1 )), $expected_minute);"
 	echo "data[$stopId][$(( trip_offset + 2 ))]=createTooltip(new Date($year, $(( month - 1 )), $day, $(( scheduled_hour - 1 )), $scheduled_minute), $stopId, $trip_offset, $stop_id, '$stop_name');"
 
