@@ -96,8 +96,9 @@ while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival
 	if [ -z "$expected_minute" ]; then
 		continue
 	fi
-	echo "data[$(( stop_sequence - 1 ))][$trip_offset]=new Date($year, $(( month - 1 )), $day, $(( expected_hour - 1 )), $expected_minute);"
-	echo "data[$(( stop_sequence - 1 ))][$(( trip_offset + 1 ))]=new Date($year, $(( month - 1 )), $day, $(( scheduled_hour - 1 )), $scheduled_minute);"
+	stopId=$(( stop_sequence - 1 ))
+	echo "data[$stopId][$trip_offset]=new Date($year, $(( month - 1 )), $day, $(( expected_hour - 1 )), $expected_minute);"
+	echo "data[$stopId][$(( trip_offset + 1 ))]=createTooltip(new Date($year, $(( month - 1 )), $day, $(( scheduled_hour - 1 )), $scheduled_minute), $stopId, $trip_offset);"
 
 done < $SPOOL
 echo

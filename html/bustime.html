@@ -36,6 +36,10 @@
 			return [date.getFullYear(),lpad(date.getMonth()+1,"0",2),lpad(date.getDate(),"0",2),lpad(date.getHours(),"0",2)].join("-");
 		}
 
+		function createTooltip(date, stopId, tripId) {
+			return "Sched: "+date.toString()+"<br/>"+data[stopId][tripId];
+		}
+
 		function drawChart() {
 			var direction=metadata.direction;
 			if(!direction) {
@@ -50,13 +54,18 @@
 			fixData(data);
 			var dataTable = new google.visualization.DataTable();
 			for(var i = 0; i < metadata.trips.length; i+=2) {
-				dataTable.addColumn({type:'date', label: metadata.trips[i]});
-				dataTable.addColumn({type:'date', role:'tooltip', label: metadata.trips[i+1]});
+				dataTable.addColumn({ type:'datetime', label: metadata.trips[i] });
+				dataTable.addColumn({ type:'string', label: metadata.trips[i+1], role:'tooltip', 'p': {'html': true} });
 			}
+
 			dataTable.addRows(data);
 
 			var options = {
 				title: current,
+				tooltip: { isHtml: true },
+				vAxis: {
+					format: 'MM/dd/yyyy HH:mm'
+				},
 				//curveType: 'function',
 				interpolateNulls: true,
 				legend: { position: 'right' }
