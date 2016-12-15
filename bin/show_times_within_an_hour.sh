@@ -15,15 +15,19 @@ fi
 SPOOL=$TMP/$$
 
 read -r -d '' SQL << _EOT_
-select distinct a.trip_id, st.stop_sequence,
+select distinct a.trip_id, 
+st.stop_sequence,
+s.stop_name,
 st.arrival_time, a.arrival_time,
 (strftime("%s",st.arrival_time) - strftime("%s",a.arrival_time)) / 60,
 st.departure_time, a.departure_time,
 (strftime("%s",st.departure_time) - strftime("%s",a.departure_time)) / 60
 from	activity a,
 		activity at,
+		stops s,
 		stop_times st
-where st.trip_id = a.trip_id
+where s.stop_id = a.stop_id
+and st.trip_id = a.trip_id
 and st.stop_id = a.stop_id
 and at.trip_id = a.trip_id
 and at.date = a.date
@@ -35,11 +39,11 @@ order by a.trip_id, st.stop_sequence, st.departure_time
 _EOT_
 
 if [ ! -f "$SPOOL" ]; then
-	#echo $SQL
+	#echo $SQL >&2
 	sqlite3 $DB "$SQL;" > $SPOOL
 fi
 
-stops=$(cut -d'|' -f2 $SPOOL |sort -fun|tail -1)
+stops=$(cat $SPOOL | cut -d'|' -f2-3 | sort -fun)
 if [ -z "$stops" ]; then
 	rm $SPOOL
 	exit
@@ -56,21 +60,19 @@ var metadata = {
 var data = [];
 _EOT_
 
-stop=0
-while [ $stop -lt $stops ]; do
-	echo "data[$stop] = [];"
-	stop=$(( stop + 1 ))
-done
+while IFS='|' read stopId stopName; do
+	echo "data[$(( stopId - 1 ))] = [ '$stopName' ];"
+done <<< "$stops"
 
 last_trip_id=
 trip_offset=-2
-while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival_time arrival_delay scheduled_departure_time expected_departure_time departure_delay; do
+while IFS='|' read trip_id stop_sequence stop_name scheduled_arrival_time expected_arrival_time arrival_delay scheduled_departure_time expected_departure_time departure_delay; do
 
 	if [ "$trip_id" != "$last_trip_id" ]; then
 		last_trip_id=$trip_id
 		trip_offset=$(( trip_offset + 2 ))
-		echo "metadata.trips[$trip_offset]='$trip_id';"
 		echo "metadata.trips[$(( trip_offset + 1 ))]='$trip_id';"
+		echo "metadata.trips[$(( trip_offset + 2 ))]='$trip_id';"
 	fi
 	if [ -z "$arrival_delay" ]; then
 		arrival_delay=0
@@ -97,8 +99,8 @@ while IFS='|' read trip_id stop_sequence scheduled_arrival_time expected_arrival
 		continue
 	fi
 	stopId=$(( stop_sequence - 1 ))
-	echo "data[$stopId][$trip_offset]=new Date($year, $(( month - 1 )), $day, $(( expected_hour - 1 )), $expected_minute);"
-	echo "data[$stopId][$(( trip_offset + 1 ))]=createTooltip(new Date($year, $(( month - 1 )), $day, $(( scheduled_hour - 1 )), $scheduled_minute), $stopId, $trip_offset);"
+	echo "data[$stopId][$(( trip_offset + 1 ))]=new Date($year, $(( month - 1 )), $day, $(( expected_hour - 1 )), $expected_minute);"
+	echo "data[$stopId][$(( trip_offset + 2 ))]=createTooltip(new Date($year, $(( month - 1 )), $day, $(( scheduled_hour - 1 )), $scheduled_minute), $stopId, $trip_offset, '$stop_name');"
 
 done < $SPOOL
 echo

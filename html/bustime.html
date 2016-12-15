@@ -36,8 +36,10 @@
 			return [date.getFullYear(),lpad(date.getMonth()+1,"0",2),lpad(date.getDate(),"0",2),lpad(date.getHours(),"0",2)].join("-");
 		}
 
-		function createTooltip(date, stopId, tripId) {
-			return "Sched: "+date.toString()+"<br/>"+data[stopId][tripId];
+		function createTooltip(scheduled, stopId, tripId, stopName) {
+			var expected = data[stopId][tripId+1];
+			var delay = (expected.getTime() - scheduled.getTime()) / 60000;
+			return stopName+"<br/>Scheduled: "+scheduled.toString()+"<br/>Expected: "+expected+"<br/>Delay in minutes: "+delay;
 		}
 
 		function drawChart() {
@@ -53,7 +55,8 @@
 		
 			fixData(data);
 			var dataTable = new google.visualization.DataTable();
-			for(var i = 0; i < metadata.trips.length; i+=2) {
+			dataTable.addColumn({ type:'string', label: "Stop" });
+			for(var i = 1; i < metadata.trips.length; i+=2) {
 				dataTable.addColumn({ type:'datetime', label: metadata.trips[i] });
 				dataTable.addColumn({ type:'string', label: metadata.trips[i+1], role:'tooltip', 'p': {'html': true} });
 			}
@@ -63,9 +66,6 @@
 			var options = {
 				title: current,
 				tooltip: { isHtml: true },
-				vAxis: {
-					format: 'MM/dd/yyyy HH:mm'
-				},
 				//curveType: 'function',
 				interpolateNulls: true,
 				legend: { position: 'right' }
